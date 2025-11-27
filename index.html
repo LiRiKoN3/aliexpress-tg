@@ -5,7 +5,6 @@
   <title>AliFinder Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* --- СТИЛИ (Дизайн) --- */
     :root {
       --bg-color: #0f172a;
       --card-bg: #1e293b;
@@ -24,65 +23,76 @@
     h1 {
       text-align: center;
       margin-bottom: 30px;
+      font-size: 2rem;
       background: linear-gradient(135deg, #f97316, #ec4899);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    /* Сетка товаров */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px;
       max-width: 1200px;
       margin: 0 auto;
     }
 
-    /* Карточка товара */
     .card {
       background: var(--card-bg);
       border-radius: 16px;
       overflow: hidden;
-      transition: transform 0.2s;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.05);
       display: flex;
       flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border-color: rgba(236, 72, 153, 0.3);
+    }
+
+    .card-img-wrap {
+      height: 220px;
+      background: #334155;
+      overflow: hidden;
+      position: relative;
     }
 
     .card-img {
       width: 100%;
-      height: 200px;
-      object-fit: cover; /* Картинка заполняет квадрат, не искажаясь */
-      background: #334155;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s;
+    }
+
+    .card:hover .card-img {
+      transform: scale(1.05);
     }
 
     .card-body {
-      padding: 15px;
+      padding: 16px;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
     }
 
     .price {
-      font-size: 18px;
-      font-weight: bold;
-      color: var(--accent);
-      margin-bottom: 5px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
     }
 
     .title {
       font-size: 14px;
       line-height: 1.4;
-      margin-bottom: 10px;
-      color: #cbd5e1;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      flex-grow: 1;
       
-      /* Обрезаем текст, если слишком длинный */
+      /* Обрезка текста до 3 строк */
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -92,129 +102,117 @@
     .btn {
       display: block;
       width: 100%;
-      padding: 10px;
-      background: #334155;
+      padding: 12px;
+      background: linear-gradient(135deg, #f97316, #ec4899);
       color: white;
       text-align: center;
       text-decoration: none;
-      border-radius: 8px;
-      font-weight: 500;
-      transition: background 0.2s;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: opacity 0.2s;
     }
     
     .btn:hover {
-      background: var(--accent);
+      opacity: 0.9;
     }
 
-    .loading {
-      text-align: center;
+    .loading, .error {
       grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
       color: #94a3b8;
     }
+    .error { color: #f87171; }
   </style>
 </head>
 <body>
 
-  <h1>🔥 Горячие находки</h1>
+  <h1>🔥 Топ Находки</h1>
 
   <div class="grid" id="productGrid">
-    <div class="loading">Загрузка товаров...</div>
+    <div class="loading">Загружаем товары...</div>
   </div>
 
   <script>
-    // --- ЛОГИКА ---
-    
-    // 1. Настройки: имя твоего файла
     const CSV_FILENAME = 'data.csv'; 
 
-    // 2. Функция, которая запускается при старте
     async function loadShop() {
       const grid = document.getElementById('productGrid');
       
       try {
-        // "Курьер" идет за файлом
         const response = await fetch(CSV_FILENAME);
-        
-        if (!response.ok) throw new Error("Не могу найти файл " + CSV_FILENAME);
+        if (!response.ok) throw new Error("Файл data.csv не найден");
         
         const dataText = await response.text();
-        
-        // Превращаем текст CSV в массив объектов
         const products = parseCSV(dataText);
 
-        // Очищаем надпись "Загрузка"
-        grid.innerHTML = '';
+        grid.innerHTML = ''; // Очистка
 
-        // Рисуем каждую карточку
-        products.forEach(product => {
-          // Проверка, чтобы не создавать пустые карточки
-          if (!product.title || !product.image) return;
+        if (products.length === 0) {
+          grid.innerHTML = '<div class="loading">Товары не найдены или файл пустой</div>';
+          return;
+        }
+
+        products.forEach(p => {
+          // Пропускаем пустые строки
+          if (!p.image || !p.title) return;
 
           const card = document.createElement('div');
           card.className = 'card';
-          
           card.innerHTML = `
-            <img src="${product.image}" alt="Товар" class="card-img" loading="lazy">
+            <div class="card-img-wrap">
+              <img src="${p.image}" alt="Товар" class="card-img" loading="lazy">
+            </div>
             <div class="card-body">
-              <div class="price">${product.price}</div>
-              <div class="title">${product.title}</div>
-              <a href="${product.link}" target="_blank" class="btn">Купить</a>
+              <div class="price">${p.price}</div>
+              <div class="title">${p.title}</div>
+              <a href="${p.link}" target="_blank" class="btn">Купить</a>
             </div>
           `;
-          
           grid.appendChild(card);
         });
 
       } catch (error) {
-        grid.innerHTML = `<div style="color:red; text-align:center;">
-          Ошибка: ${error.message}<br>
-          <small>Убедись, что файл называется <b>data.csv</b> и загружен на GitHub!</small>
-        </div>`;
         console.error(error);
+        grid.innerHTML = `<div class="error">
+          Ошибка: ${error.message}<br>
+          <small>Проверь, что файл называется <b>data.csv</b> и лежит рядом.</small>
+        </div>`;
       }
     }
 
-    // 3. Простой парсер CSV (превращает запятые в структуру)
+    // Умный парсер CSV (учитывает кавычки и запятые внутри)
     function parseCSV(text) {
-      const lines = text.split('\n'); // Разбиваем на строки
+      const lines = text.split('\n');
       const result = [];
       
-      // Пропускаем первую строку (заголовки), начинаем с i=1
+      // Начинаем с 1, чтобы пропустить заголовки
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
+
+        // Регулярное выражение для правильного разбора CSV с кавычками
+        const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
         
-        // ВНИМАНИЕ: Это упрощенный разбив по запятой. 
-        // Если в названии товара есть запятые, он может сбиться.
-        // Но для начала подойдет.
-        // По твоему скриншоту:
-        // C (индекс 2) = Картинка
-        // B (индекс 1) = Название
-        // F (индекс 5) = Цена
-        // E (индекс 4) = Ссылка на товар (Promotion Url)
-        
-        const cols = line.split(','); 
-        
-        // Иногда CSV использует ";" как разделитель. Если не сработало, попробуй line.split(';')
-        
-        // Собираем объект, очищая кавычки если есть
-        if (cols.length > 5) {
-          result.push({
-            title: clean(cols[1]),       // Столбец B
-            image: clean(cols[2]),       // Столбец C
-            link: clean(cols[4]),        // Столбец E (Promotion Url)
-            price: clean(cols[5])        // Столбец F
-          });
+        if (matches) {
+          // Очищаем кавычки вокруг значений
+          const cols = matches.map(val => val.replace(/^"|"$/g, '').trim());
+          
+          // Проверяем, есть ли достаточно колонок (минимум 15 для ссылки)
+          if (cols.length >= 14) {
+            result.push({
+              image: cols[1],      // Image Url
+              title: cols[3],      // Product Desc
+              price: cols[5],      // Discount Price
+              link: cols[14]       // Promotion Url
+            });
+          }
         }
       }
       return result;
     }
 
-    function clean(str) {
-      return str ? str.replace(/"/g, '').trim() : '';
-    }
-
-    // Запуск!
     loadShop();
   </script>
 </body>
