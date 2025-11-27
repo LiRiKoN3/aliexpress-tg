@@ -2,238 +2,220 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>AliFinder</title>
+  <title>AliFinder Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    /* --- СТИЛИ (Дизайн) --- */
     :root {
       --bg-color: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --accent-gradient: linear-gradient(135deg, #f97316, #ec4899);
+      --card-bg: #1e293b;
       --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --border-color: #334155;
-      --input-bg: #1e293b;
+      --accent: #ec4899;
     }
 
     body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       background: var(--bg-color);
       color: var(--text-main);
       font-family: system-ui, -apple-system, sans-serif;
-      overflow: hidden; /* Убираем скролл */
-    }
-
-    /* Фоновый декоративный элемент (пятно света) */
-    body::before {
-      content: '';
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      background: var(--accent-gradient);
-      filter: blur(150px);
-      opacity: 0.15;
-      z-index: -1;
-      border-radius: 50%;
-    }
-
-    .card {
-      width: 100%;
-      max-width: 480px;
-      padding: 40px;
-      background: var(--card-bg);
-      backdrop-filter: blur(12px); /* Эффект матового стекла */
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      text-align: center;
-      transition: transform 0.3s ease;
-    }
-
-    .logo {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 8px;
+      margin: 0;
+      padding: 20px;
     }
 
     h1 {
-      margin: 0 0 30px 0;
-      font-size: 28px;
-      font-weight: 700;
-      background: var(--accent-gradient);
+      text-align: center;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #f97316, #ec4899);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    .input-wrapper {
-      position: relative;
-      margin-bottom: 20px;
-      group: focus;
+    /* Сетка товаров */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
-    input[type="text"] {
+    /* Карточка товара */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.2s;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+
+    .card-img {
       width: 100%;
-      padding: 16px 50px 16px 20px;
+      height: 200px;
+      object-fit: cover; /* Картинка заполняет квадрат, не искажаясь */
+      background: #334155;
+    }
+
+    .card-body {
+      padding: 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .price {
       font-size: 18px;
-      background: var(--input-bg);
-      border: 2px solid var(--border-color);
-      border-radius: 14px;
-      color: var(--text-main);
-      outline: none;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 5px;
     }
 
-    input[type="text"]::placeholder {
-      color: var(--text-muted);
-      opacity: 0.6;
-    }
-
-    /* Эффект свечения при фокусе */
-    input[type="text"]:focus {
-      border-color: #ec4899;
-      box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
-      background: #253045;
-    }
-
-    .shortcut-icon {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      pointer-events: none;
-      opacity: 0.6;
+    .title {
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 10px;
+      color: #cbd5e1;
+      
+      /* Обрезаем текст, если слишком длинный */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .btn {
+      display: block;
       width: 100%;
-      padding: 16px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 14px;
-      background: var(--accent-gradient);
+      padding: 10px;
+      background: #334155;
       color: white;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+      text-align: center;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: background 0.2s;
     }
-
+    
     .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+      background: var(--accent);
     }
 
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    /* Скрываем ошибку и показываем с анимацией */
-    .error-msg {
-      height: 0;
-      overflow: hidden;
-      margin-top: 0;
-      color: #f87171;
-      font-size: 14px;
-      transition: all 0.3s ease;
-      opacity: 0;
-    }
-
-    .error-msg.visible {
-      height: 24px;
-      margin-top: 12px;
-      opacity: 1;
+    .loading {
+      text-align: center;
+      grid-column: 1 / -1;
+      color: #94a3b8;
     }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <div class="logo">AliFinder</div>
-    <h1>Поиск товаров</h1>
+  <h1>🔥 Горячие находки</h1>
 
-    <form id="searchForm">
-      <div class="input-wrapper">
-        <input 
-          type="text" 
-          id="queryInput" 
-          placeholder="Что ищем?" 
-          autocomplete="off" 
-          autofocus
-        />
-        <div class="shortcut-icon">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 10 4 15 9 20"></polyline>
-            <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
-          </svg>
-        </div>
-      </div>
-
-      <button type="submit" class="btn">Найти на AliExpress</button>
-      <div id="errorMsg" class="error-msg">Введите название товара</div>
-    </form>
+  <div class="grid" id="productGrid">
+    <div class="loading">Загрузка товаров...</div>
   </div>
 
   <script>
-    // КОНФИГУРАЦИЯ
-    const CONFIG = {
-      base: "https://www.aliexpress.com/w/wholesale-",
-      // Твой хвост партнёрской ссылки:
-      tail: ".html?aff_fcid=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&tt=CPS_NORMAL&aff_fsk=_c36qLxOt&aff_platform=portals-tool&sk=_c36qLxOt&aff_trace_key=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&terminal_id=47c777dd5cc64484b16414869550df85"
-    };
+    // --- ЛОГИКА ---
+    
+    // 1. Настройки: имя твоего файла
+    const CSV_FILENAME = 'data.csv'; 
 
-    const form = document.getElementById("searchForm");
-    const input = document.getElementById("queryInput");
-    const errorMsg = document.getElementById("errorMsg");
+    // 2. Функция, которая запускается при старте
+    async function loadShop() {
+      const grid = document.getElementById('productGrid');
+      
+      try {
+        // "Курьер" идет за файлом
+        const response = await fetch(CSV_FILENAME);
+        
+        if (!response.ok) throw new Error("Не могу найти файл " + CSV_FILENAME);
+        
+        const dataText = await response.text();
+        
+        // Превращаем текст CSV в массив объектов
+        const products = parseCSV(dataText);
 
-    // Функция построения ссылки
-    function buildUrl(query) {
-      if (!query) return null;
-      // Заменяем пробелы на дефисы для формата ссылки wholesale-query.html
-      // Удаляем спецсимволы, чтобы не ломать URL
-      const cleanQuery = query.trim().replace(/[^\w\sа-яА-ЯёЁ0-9-]/g, ''); 
-      const slug = encodeURIComponent(cleanQuery.replace(/\s+/g, "-"));
-      return CONFIG.base + slug + CONFIG.tail;
+        // Очищаем надпись "Загрузка"
+        grid.innerHTML = '';
+
+        // Рисуем каждую карточку
+        products.forEach(product => {
+          // Проверка, чтобы не создавать пустые карточки
+          if (!product.title || !product.image) return;
+
+          const card = document.createElement('div');
+          card.className = 'card';
+          
+          card.innerHTML = `
+            <img src="${product.image}" alt="Товар" class="card-img" loading="lazy">
+            <div class="card-body">
+              <div class="price">${product.price}</div>
+              <div class="title">${product.title}</div>
+              <a href="${product.link}" target="_blank" class="btn">Купить</a>
+            </div>
+          `;
+          
+          grid.appendChild(card);
+        });
+
+      } catch (error) {
+        grid.innerHTML = `<div style="color:red; text-align:center;">
+          Ошибка: ${error.message}<br>
+          <small>Убедись, что файл называется <b>data.csv</b> и загружен на GitHub!</small>
+        </div>`;
+        console.error(error);
+      }
     }
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
+    // 3. Простой парсер CSV (превращает запятые в структуру)
+    function parseCSV(text) {
+      const lines = text.split('\n'); // Разбиваем на строки
+      const result = [];
       
-      const query = input.value.trim();
-      
-      if (!query) {
-        showError(true);
-        input.focus(); // Возвращаем фокус в поле
-        // Легкая тряска поля при ошибке (можно добавить class 'shake')
-        return;
+      // Пропускаем первую строку (заголовки), начинаем с i=1
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // ВНИМАНИЕ: Это упрощенный разбив по запятой. 
+        // Если в названии товара есть запятые, он может сбиться.
+        // Но для начала подойдет.
+        // По твоему скриншоту:
+        // C (индекс 2) = Картинка
+        // B (индекс 1) = Название
+        // F (индекс 5) = Цена
+        // E (индекс 4) = Ссылка на товар (Promotion Url)
+        
+        const cols = line.split(','); 
+        
+        // Иногда CSV использует ";" как разделитель. Если не сработало, попробуй line.split(';')
+        
+        // Собираем объект, очищая кавычки если есть
+        if (cols.length > 5) {
+          result.push({
+            title: clean(cols[1]),       // Столбец B
+            image: clean(cols[2]),       // Столбец C
+            link: clean(cols[4]),        // Столбец E (Promotion Url)
+            price: clean(cols[5])        // Столбец F
+          });
+        }
       }
-
-      const url = buildUrl(query);
-      window.location.href = url;
-    });
-
-    // Убираем ошибку, как только начали печатать
-    input.addEventListener("input", () => {
-      showError(false);
-    });
-
-    function showError(show) {
-      if (show) {
-        errorMsg.classList.add("visible");
-        input.style.borderColor = "#f87171";
-      } else {
-        errorMsg.classList.remove("visible");
-        input.style.borderColor = ""; // Сброс к стилю по умолчанию
-      }
+      return result;
     }
+
+    function clean(str) {
+      return str ? str.replace(/"/g, '').trim() : '';
+    }
+
+    // Запуск!
+    loadShop();
   </script>
 </body>
 </html>
