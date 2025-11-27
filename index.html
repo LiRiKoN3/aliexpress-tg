@@ -2,183 +2,238 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>AliFinder – быстрый поиск на AliExpress</title>
+  <title>AliFinder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --accent-gradient: linear-gradient(135deg, #f97316, #ec4899);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --input-bg: #1e293b;
     }
+
     body {
       margin: 0;
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #0f172a;
-      color: #e5e7eb;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden; /* Убираем скролл */
     }
+
+    /* Фоновый декоративный элемент (пятно света) */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: var(--accent-gradient);
+      filter: blur(150px);
+      opacity: 0.15;
+      z-index: -1;
+      border-radius: 50%;
+    }
+
     .card {
       width: 100%;
-      max-width: 420px;
-      background: rgba(15, 23, 42, 0.95);
-      border-radius: 16px;
-      padding: 20px 18px 18px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      max-width: 480px;
+      padding: 40px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px); /* Эффект матового стекла */
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      transition: transform 0.3s ease;
     }
-    .title {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 6px;
+
+    .logo {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
     }
-    .subtitle {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-bottom: 16px;
+
+    h1 {
+      margin: 0 0 30px 0;
+      font-size: 28px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .label {
-      font-size: 13px;
-      margin-bottom: 6px;
-      color: #e5e7eb;
-    }
-    .input-wrap {
+
+    .input-wrapper {
       position: relative;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
+      group: focus;
     }
+
     input[type="text"] {
       width: 100%;
-      padding: 10px 36px 10px 12px;
-      border-radius: 10px;
-      border: 1px solid #4b5563;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 14px;
+      padding: 16px 50px 16px 20px;
+      font-size: 18px;
+      background: var(--input-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 14px;
+      color: var(--text-main);
       outline: none;
       box-sizing: border-box;
+      transition: all 0.3s ease;
     }
+
     input[type="text"]::placeholder {
-      color: #6b7280;
+      color: var(--text-muted);
+      opacity: 0.6;
     }
-    .shortcut {
+
+    /* Эффект свечения при фокусе */
+    input[type="text"]:focus {
+      border-color: #ec4899;
+      box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+      background: #253045;
+    }
+
+    .shortcut-icon {
       position: absolute;
-      right: 10px;
+      right: 16px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 11px;
-      color: #6b7280;
-      border-radius: 6px;
-      border: 1px solid #4b5563;
-      padding: 2px 6px;
+      color: var(--text-muted);
+      pointer-events: none;
+      opacity: 0.6;
     }
+
     .btn {
       width: 100%;
-      margin-top: 6px;
-      padding: 11px 12px;
-      border-radius: 10px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
       border: none;
-      font-size: 15px;
-      font-weight: 500;
+      border-radius: 14px;
+      background: var(--accent-gradient);
+      color: white;
       cursor: pointer;
-      background: linear-gradient(135deg, #f97316, #ec4899);
-      color: #111827;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
     }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+    }
+
     .btn:active {
-      transform: translateY(1px);
-      filter: brightness(0.95);
+      transform: translateY(0);
     }
-    .hint {
-      margin-top: 10px;
-      font-size: 12px;
-      color: #9ca3af;
-    }
-    .hint span {
-      color: #f97316;
-      font-weight: 500;
-    }
-    .error {
-      margin-top: 8px;
-      font-size: 12px;
+
+    /* Скрываем ошибку и показываем с анимацией */
+    .error-msg {
+      height: 0;
+      overflow: hidden;
+      margin-top: 0;
       color: #f87171;
-      display: none;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      opacity: 0;
     }
-    .logo {
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #9ca3af;
-      margin-bottom: 8px;
+
+    .error-msg.visible {
+      height: 24px;
+      margin-top: 12px;
+      opacity: 1;
     }
   </style>
 </head>
 <body>
+
   <div class="card">
     <div class="logo">AliFinder</div>
-    <div class="title">Поиск по AliExpress</div>
-    <div class="subtitle">
-      Введите, что хотите найти. Мы откроем выдачу AliExpress по вашему запросу через партнёрскую ссылку.
-    </div>
+    <h1>Поиск товаров</h1>
 
-    <div class="label">Что ищем?</div>
     <form id="searchForm">
-      <div class="input-wrap">
-        <input
-          type="text"
-          id="queryInput"
-          placeholder="Например: чехол для iPhone 17 Pro"
-          autocomplete="off"
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="queryInput" 
+          placeholder="Что ищем?" 
+          autocomplete="off" 
+          autofocus
         />
-        <div class="shortcut">Enter</div>
+        <div class="shortcut-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 10 4 15 9 20"></polyline>
+            <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+          </svg>
+        </div>
       </div>
-      <button type="submit" class="btn">Открыть на AliExpress</button>
-      <div id="errorMsg" class="error">Пожалуйста, введите запрос.</div>
-    </form>
 
-    <div class="hint">
-      Пример запросов: <span>iphone case</span>, <span>power bank 20000</span>, <span>органайзер в чемодан</span>.
-    </div>
+      <button type="submit" class="btn">Найти на AliExpress</button>
+      <div id="errorMsg" class="error-msg">Введите название товара</div>
+    </form>
   </div>
 
   <script>
-    // ⚠️ твой партнёрский хвост
-    const BASE = "https://www.aliexpress.com/w/wholesale-";
-    const TAIL =
-      ".html?aff_fcid=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&tt=CPS_NORMAL&aff_fsk=_c36qLxOt&aff_platform=portals-tool&sk=_c36qLxOt&aff_trace_key=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&terminal_id=47c777dd5cc64484b16414869550df85";
+    // КОНФИГУРАЦИЯ
+    const CONFIG = {
+      base: "https://www.aliexpress.com/w/wholesale-",
+      // Твой хвост партнёрской ссылки:
+      tail: ".html?aff_fcid=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&tt=CPS_NORMAL&aff_fsk=_c36qLxOt&aff_platform=portals-tool&sk=_c36qLxOt&aff_trace_key=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&terminal_id=47c777dd5cc64484b16414869550df85"
+    };
 
     const form = document.getElementById("searchForm");
     const input = document.getElementById("queryInput");
     const errorMsg = document.getElementById("errorMsg");
 
-    function buildAliSearchUrl(query) {
-      const trimmed = query.trim();
-      if (!trimmed) return null;
-
-      const normalized = trimmed.replace(/\s+/g, "-");
-      const slug = encodeURIComponent(normalized);
-      return BASE + slug + TAIL;
+    // Функция построения ссылки
+    function buildUrl(query) {
+      if (!query) return null;
+      // Заменяем пробелы на дефисы для формата ссылки wholesale-query.html
+      // Удаляем спецсимволы, чтобы не ломать URL
+      const cleanQuery = query.trim().replace(/[^\w\sа-яА-ЯёЁ0-9-]/g, ''); 
+      const slug = encodeURIComponent(cleanQuery.replace(/\s+/g, "-"));
+      return CONFIG.base + slug + CONFIG.tail;
     }
 
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-      errorMsg.style.display = "none";
-
-      const query = input.value;
-      const url = buildAliSearchUrl(query);
-
-      if (!url) {
-        errorMsg.textContent = "Пожалуйста, введите запрос.";
-        errorMsg.style.display = "block";
+      
+      const query = input.value.trim();
+      
+      if (!query) {
+        showError(true);
+        input.focus(); // Возвращаем фокус в поле
+        // Легкая тряска поля при ошибке (можно добавить class 'shake')
         return;
       }
 
+      const url = buildUrl(query);
       window.location.href = url;
     });
 
+    // Убираем ошибку, как только начали печатать
     input.addEventListener("input", () => {
-      if (errorMsg.style.display === "block") {
-        errorMsg.style.display = "none";
-      }
+      showError(false);
     });
+
+    function showError(show) {
+      if (show) {
+        errorMsg.classList.add("visible");
+        input.style.borderColor = "#f87171";
+      } else {
+        errorMsg.classList.remove("visible");
+        input.style.borderColor = ""; // Сброс к стилю по умолчанию
+      }
+    }
   </script>
 </body>
 </html>
