@@ -10,6 +10,7 @@
       --card-bg: #1e293b;
       --text-main: #f8fafc;
       --accent: #ec4899;
+      --input-bg: #334155;
     }
 
     body {
@@ -22,16 +23,41 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       font-size: 2rem;
       background: linear-gradient(135deg, #f97316, #ec4899);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
+    /* --- ПОИСК --- */
+    .search-wrapper {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      position: relative;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 16px 20px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.1);
+      background: var(--input-bg);
+      color: white;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    /* --- СЕТКА ТОВАРОВ --- */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 24px;
       max-width: 1200px;
       margin: 0 auto;
@@ -43,7 +69,8 @@
       overflow: hidden;
       border: 1px solid rgba(255,255,255,0.05);
       display: flex;
-      flex-direction: column;
+      flex-direction: column; /* Элементы внутри стоят столбиком */
+      height: 100%; /* Карточка занимает всю высоту строки */
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -57,7 +84,7 @@
       height: 220px;
       background: #334155;
       overflow: hidden;
-      position: relative;
+      flex-shrink: 0; /* Картинка не сжимается */
     }
 
     .card-img {
@@ -73,7 +100,7 @@
 
     .card-body {
       padding: 16px;
-      flex-grow: 1;
+      flex-grow: 1; /* Тело карточки растягивается, заполняя пустоту */
       display: flex;
       flex-direction: column;
     }
@@ -85,14 +112,20 @@
       margin-bottom: 8px;
     }
 
+    .commission {
+      font-size: 12px;
+      color: #10b981; /* Зеленый цвет для прибыли */
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
     .title {
       font-size: 14px;
       line-height: 1.4;
       color: #94a3b8;
       margin-bottom: 16px;
-      flex-grow: 1;
       
-      /* Обрезка текста до 3 строк */
+      /* Обрезка текста */
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -100,6 +133,7 @@
     }
 
     .btn {
+      margin-top: auto; /* ВОТ ОНО! Прижимает кнопку к низу */
       display: block;
       width: 100%;
       padding: 12px;
@@ -130,12 +164,17 @@
 
   <h1>🔥 Топ Находки</h1>
 
+  <div class="search-wrapper">
+    <input type="text" id="searchInput" placeholder="Найти товар..." autocomplete="off">
+  </div>
+
   <div class="grid" id="productGrid">
     <div class="loading">Загружаем товары...</div>
   </div>
 
   <script>
     const CSV_FILENAME = 'data.csv'; 
+    let allProducts = []; // Храним все товары здесь, чтобы фильтровать их
 
     async function loadShop() {
       const grid = document.getElementById('productGrid');
@@ -145,66 +184,92 @@
         if (!response.ok) throw new Error("Файл data.csv не найден");
         
         const dataText = await response.text();
-        const products = parseCSV(dataText);
+        allProducts = parseCSV(dataText); // Сохраняем в глобальную переменную
 
-        grid.innerHTML = ''; // Очистка
+        // 1. СОРТИРОВКА: Сначала дорогие по комиссии
+        // Мы берем поле estimatedCommission и превращаем в число для сравнения
+        allProducts.sort((a, b) => {
+          return parseMoney(b.estimatedCommission) - parseMoney(a.estimatedCommission);
+        });
 
-        if (products.length === 0) {
-          grid.innerHTML = '<div class="loading">Товары не найдены или файл пустой</div>';
-          return;
-        }
+        // Рисуем товары первый раз
+        renderProducts(allProducts);
 
-        products.forEach(p => {
-          // Пропускаем пустые строки
-          if (!p.image || !p.title) return;
-
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `
-            <div class="card-img-wrap">
-              <img src="${p.image}" alt="Товар" class="card-img" loading="lazy">
-            </div>
-            <div class="card-body">
-              <div class="price">${p.price}</div>
-              <div class="title">${p.title}</div>
-              <a href="${p.link}" target="_blank" class="btn">Купить</a>
-            </div>
-          `;
-          grid.appendChild(card);
+        // Настраиваем поиск
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+          const query = e.target.value.toLowerCase();
+          const filtered = allProducts.filter(p => p.title.toLowerCase().includes(query));
+          renderProducts(filtered);
         });
 
       } catch (error) {
         console.error(error);
         grid.innerHTML = `<div class="error">
           Ошибка: ${error.message}<br>
-          <small>Проверь, что файл называется <b>data.csv</b> и лежит рядом.</small>
+          <small>Проверь, что файл называется <b>data.csv</b></small>
         </div>`;
       }
     }
 
-    // Умный парсер CSV (учитывает кавычки и запятые внутри)
+    // Функция отрисовки (чтобы можно было вызывать её много раз при поиске)
+    function renderProducts(products) {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = '';
+
+      if (products.length === 0) {
+        grid.innerHTML = '<div class="loading">Ничего не найдено :(</div>';
+        return;
+      }
+
+      products.forEach(p => {
+        if (!p.image || !p.title) return;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        // Добавил отображение дохода (можно убрать строку <div class="commission">, если не хочешь показывать это пользователям)
+        card.innerHTML = `
+          <div class="card-img-wrap">
+            <img src="${p.image}" alt="Товар" class="card-img" loading="lazy">
+          </div>
+          <div class="card-body">
+            <div class="price">${p.price}</div>
+            
+            <div class="title">${p.title}</div>
+            <a href="${p.link}" target="_blank" class="btn">Купить</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Хелпер: превращает "UAH 40.68" в число 40.68
+    function parseMoney(str) {
+      if (!str) return 0;
+      // Удаляем всё кроме цифр и точки
+      const clean = str.replace(/[^0-9.]/g, '');
+      return parseFloat(clean) || 0;
+    }
+
     function parseCSV(text) {
       const lines = text.split('\n');
       const result = [];
       
-      // Начинаем с 1, чтобы пропустить заголовки
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
 
-        // Регулярное выражение для правильного разбора CSV с кавычками
         const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
         
         if (matches) {
-          // Очищаем кавычки вокруг значений
           const cols = matches.map(val => val.replace(/^"|"$/g, '').trim());
           
-          // Проверяем, есть ли достаточно колонок (минимум 15 для ссылки)
-          if (cols.length >= 14) {
+          if (cols.length >= 10) {
             result.push({
               image: cols[1],      // Image Url
               title: cols[3],      // Product Desc
               price: cols[5],      // Discount Price
+              // Столбец 9 - это Estimated direct linking commission
+              estimatedCommission: cols[9], 
               link: cols[14]       // Promotion Url
             });
           }
