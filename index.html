@@ -58,8 +58,11 @@
       text-align: center;
       font-size: 14px;
       color: #94a3b8;
-      height: 20px; /* Чтобы текст не прыгал */
+      height: 20px;
       margin-bottom: 30px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* --- СЕТКА ТОВАРОВ --- */
@@ -183,7 +186,7 @@
   <h1>🔥 Топ Находки</h1>
 
   <div class="search-wrapper">
-    <input type="text" id="searchInput" placeholder="Поиск (например: удочка, наушники)..." autocomplete="off">
+    <input type="text" id="searchInput" placeholder="Поиск (например: удочка, камера, сумка)..." autocomplete="off">
   </div>
   <div class="search-status" id="searchStatus"></div>
 
@@ -198,8 +201,7 @@
 
     let allProducts = [];
 
-    // --- 1. Функция Debounce (Задержка) ---
-    // Чтобы не "спамить" сервер перевода при каждом нажатии клавиши
+    // --- 1. Функция Debounce ---
     function debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
@@ -225,11 +227,10 @@
 
         renderProducts(allProducts, '');
 
-        // --- 2. Умный поиск с переводом ---
+        // --- 2. Умный поиск (Мульти-перевод) ---
         const searchInput = document.getElementById('searchInput');
         const searchStatus = document.getElementById('searchStatus');
 
-        // Оборачиваем нашу логику поиска в задержку (600 мс)
         const handleSearch = debounce(async (e) => {
           let query = e.target.value.toLowerCase().trim();
 
@@ -239,35 +240,54 @@
             return;
           }
 
-          // Если в запросе русские буквы, пробуем перевести
           const isRussian = /[а-яё]/i.test(query);
-          let searchTerms = [query];
+          // Используем Set, чтобы слова не дублировались
+          let uniqueTerms = new Set();
+          uniqueTerms.add(query);
 
           if (isRussian) {
-            searchStatus.textContent = '🔄 Переводим...';
+            searchStatus.textContent = '🔄 Ищем варианты перевода...';
             try {
-              // Запрос к бесплатному API
               const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=ru|en`);
               const data = await res.json();
               
-              if (data.responseData && data.responseData.translatedText) {
-                const translated = data.responseData.translatedText.toLowerCase();
-                // Добавляем перевод в поиск
-                searchTerms.push(translated);
-                // Разбиваем на отдельные слова тоже
-                searchTerms.push(...translated.split(' '));
-                
-                searchStatus.textContent = `Ищем: "${query}" + "${translated}"`;
+              // ПРОВЕРЯЕМ ВСЕ СОВПАДЕНИЯ (matches)
+              if (data.matches && data.matches.length > 0) {
+                 data.matches.forEach(match => {
+                    const tr = match.translation.toLowerCase();
+                    // Добавляем целиком
+                    uniqueTerms.add(tr);
+                    // Добавляем по отдельным словам (например "video camera" -> "video", "camera")
+                    tr.split(/[^a-z0-9]/).forEach(word => {
+                        if (word.length > 1) uniqueTerms.add(word);
+                    });
+                 });
+              } 
+              // На всякий случай проверяем и основной ответ
+              else if (data.responseData.translatedText) {
+                 const tr = data.responseData.translatedText.toLowerCase();
+                 uniqueTerms.add(tr);
+                 tr.split(/[^a-z0-9]/).forEach(word => {
+                    if (word.length > 1) uniqueTerms.add(word);
+                 });
               }
+
+              // Показываем пользователю, какие слова мы ищем (для отладки)
+              const termsArray = Array.from(uniqueTerms);
+              // Берем только первые 5 слов для статуса, чтобы не забивать экран
+              searchStatus.textContent = `Ищем: ${termsArray.slice(0, 5).join(', ')}...`;
+
             } catch (err) {
-              console.error("Ошибка перевода:", err);
+              console.error("Ошибка API:", err);
               searchStatus.textContent = 'Ошибка перевода, ищем как есть...';
             }
           } else {
             searchStatus.textContent = '';
           }
 
-          // Фильтрация
+          // Превращаем Set обратно в массив для фильтрации
+          const searchTerms = Array.from(uniqueTerms);
+
           const filtered = allProducts.filter(p => {
             const titleLower = p.title.toLowerCase();
             return searchTerms.some(term => titleLower.includes(term));
@@ -275,7 +295,7 @@
           
           renderProducts(filtered, query);
 
-        }, 600); // <-- Время задержки в миллисекундах
+        }, 600);
 
         searchInput.addEventListener('input', handleSearch);
 
