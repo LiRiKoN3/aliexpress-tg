@@ -56,12 +56,10 @@
     /* --- СЕТКА ТОВАРОВ --- */
     .grid {
       display: grid;
-      /* Адаптивная сетка: колонки не меньше 240px */
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 24px;
       max-width: 1200px;
       margin: 0 auto;
-      /* ВАЖНО: растягиваем ячейки по высоте */
       align-items: stretch;
     }
 
@@ -70,12 +68,9 @@
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,0.05);
-      
-      /* FLEXBOX МАГИЯ ДЛЯ ВЫРАВНИВАНИЯ */
       display: flex;
       flex-direction: column; 
-      height: 100%; /* Карточка занимает всю высоту ячейки сетки */
-      
+      height: 100%;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -106,7 +101,6 @@
 
     .card-body {
       padding: 16px;
-      /* ВАЖНО: тело карточки растет, занимая все свободное место */
       flex-grow: 1; 
       display: flex;
       flex-direction: column;
@@ -124,8 +118,6 @@
       line-height: 1.4;
       color: #94a3b8;
       margin-bottom: 16px;
-      
-      /* Ограничение текста (3 строки) */
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -133,7 +125,6 @@
     }
 
     .btn {
-      /* ВАЖНО: margin-top: auto толкает кнопку в самый низ контейнера */
       margin-top: auto; 
       display: block;
       width: 100%;
@@ -145,7 +136,7 @@
       border-radius: 10px;
       font-weight: 600;
       transition: opacity 0.2s;
-      box-sizing: border-box; /* Чтобы padding не ломал ширину */
+      box-sizing: border-box;
     }
     
     .btn:hover {
@@ -178,22 +169,23 @@
     const CSV_FILENAME = 'data.csv'; 
     let allProducts = [];
 
-    // --- СЛОВАРЬ (Добавь сюда свои слова!) ---
+    // --- ТВОЙ СЛОВАРЬ ---
+    // Добавляй сюда новые слова в формате: 'русское': 'english english'
     const DICTIONARY = {
-      'чехол': 'case',
-      'сумка': 'bag',
+      'чехол': 'case cover',
+      'сумка': 'bag handbag',
       'часы': 'watch',
       'наушники': 'earphone headphone',
-      'кабель': 'cable',
+      'кабель': 'cable wire',
       'зарядка': 'charger',
       'игрушка': 'toy',
-      'стекло': 'glass',
-      'держатель': 'holder',
-      'фонарь': 'light',
+      'стекло': 'glass screen',
+      'держатель': 'holder stand',
+      'фонарь': 'light lamp',
       'платье': 'dress',
-      'обувь': 'shoes',
-      'инструмент': 'tool',
-      'рыбалка': 'fishing'
+      'обувь': 'shoes sneakers',
+      'инструмент': 'tool drill',
+      'рыбалка': 'fishing lure'
     };
 
     async function loadShop() {
@@ -206,24 +198,39 @@
         const dataText = await response.text();
         allProducts = parseCSV(dataText);
 
-        // Сортировка по прибыли
+        // Сортировка по прибыли (от большей к меньшей)
         allProducts.sort((a, b) => parseMoney(b.commission) - parseMoney(a.commission));
 
         renderProducts(allProducts);
 
-        // --- УМНЫЙ ПОИСК ---
+        // --- УМНЫЙ ПОИСК (NEW) ---
         document.getElementById('searchInput').addEventListener('input', (e) => {
           let query = e.target.value.toLowerCase().trim();
           
-          // Проверяем словарь: если ввели русское слово, подменяем на английское
+          if (!query) {
+            renderProducts(allProducts);
+            return;
+          }
+
+          // 1. Собираем список слов для поиска
+          // Начинаем с того, что ввел пользователь
+          let searchTerms = [query]; 
+
+          // Пробегаем по словарю
           for (const [ru, en] of Object.entries(DICTIONARY)) {
-            if (query.includes(ru)) {
-              query = query.replace(ru, en);
+            // Если ключ словаря (например, "чехол") содержит то, что мы ввели ("че")
+            if (ru.includes(query)) {
+              // Добавляем английский перевод в список поиска
+              searchTerms.push(en);
             }
           }
 
+          // 2. Фильтруем товары
           const filtered = allProducts.filter(p => {
-            return p.title.toLowerCase().includes(query);
+            const titleLower = p.title.toLowerCase();
+            
+            // Проверяем: есть ли в названии товара ХОТЯ БЫ ОДНО слово из нашего списка
+            return searchTerms.some(term => titleLower.includes(term));
           });
           
           renderProducts(filtered);
@@ -244,7 +251,6 @@
         return;
       }
 
-      // Лимит отображения товаров (чтобы браузер не завис, если их тысячи)
       const LIMIT = 100; 
 
       products.slice(0, LIMIT).forEach(p => {
