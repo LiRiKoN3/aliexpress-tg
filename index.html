@@ -33,7 +33,8 @@
     /* --- ПОИСК --- */
     .search-wrapper {
       max-width: 600px;
-      margin: 0 auto 40px;
+      margin: 0 auto 10px;
+      position: relative;
     }
 
     input[type="text"] {
@@ -51,6 +52,14 @@
 
     input[type="text"]:focus {
       border-color: var(--accent);
+    }
+    
+    .search-status {
+      text-align: center;
+      font-size: 14px;
+      color: #94a3b8;
+      height: 20px; /* Чтобы текст не прыгал */
+      margin-bottom: 30px;
     }
 
     /* --- СЕТКА ТОВАРОВ --- */
@@ -152,12 +161,11 @@
     }
     .error { color: #f87171; }
     
-    /* Стиль для кнопки "Искать на AliExpress" */
     .ali-search-btn {
       display: inline-block;
       margin-top: 20px;
       padding: 14px 28px;
-      background: #ef4444; /* Красный цвет Али */
+      background: #ef4444; 
       color: white;
       text-decoration: none;
       border-radius: 30px;
@@ -175,8 +183,9 @@
   <h1>🔥 Топ Находки</h1>
 
   <div class="search-wrapper">
-    <input type="text" id="searchInput" placeholder="Поиск (например: чехол, часы, сумка)..." autocomplete="off">
+    <input type="text" id="searchInput" placeholder="Поиск (например: удочка, наушники)..." autocomplete="off">
   </div>
+  <div class="search-status" id="searchStatus"></div>
 
   <div class="grid" id="productGrid">
     <div class="loading">Загружаем товары...</div>
@@ -184,31 +193,24 @@
 
   <script>
     const CSV_FILENAME = 'data.csv'; 
-    
-    // --- НАСТРОЙКИ ССЫЛКИ ---
-    // Твоя партнерская ссылка разделена на две части, чтобы мы могли вставить запрос посередине
     const ALI_BASE = "https://www.aliexpress.com/w/wholesale-";
     const ALI_TAIL = ".html?aff_fcid=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&tt=CPS_NORMAL&aff_fsk=_c36qLxOt&aff_platform=portals-tool&sk=_c36qLxOt&aff_trace_key=98ec6f55e54845488d7ebd124ece34b8-1764283998658-03138-_c36qLxOt&terminal_id=47c777dd5cc64484b16414869550df85";
 
     let allProducts = [];
 
-    // Словарь синонимов
-    const DICTIONARY = {
-      'чехол': 'case cover',
-      'сумка': 'bag handbag',
-      'часы': 'watch',
-      'наушники': 'earphone headphone',
-      'кабель': 'cable wire',
-      'зарядка': 'charger',
-      'игрушка': 'toy',
-      'стекло': 'glass screen',
-      'держатель': 'holder stand',
-      'фонарь': 'light lamp',
-      'платье': 'dress',
-      'обувь': 'shoes sneakers',
-      'инструмент': 'tool drill',
-      'рыбалка': 'fishing lure'
-    };
+    // --- 1. Функция Debounce (Задержка) ---
+    // Чтобы не "спамить" сервер перевода при каждом нажатии клавиши
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
 
     async function loadShop() {
       const grid = document.getElementById('productGrid');
@@ -219,39 +221,63 @@
         
         const dataText = await response.text();
         allProducts = parseCSV(dataText);
-
-        // Сортировка по прибыли
         allProducts.sort((a, b) => parseMoney(b.commission) - parseMoney(a.commission));
 
-        renderProducts(allProducts, ''); // Рисуем всё сразу
+        renderProducts(allProducts, '');
 
-        // --- УМНЫЙ ПОИСК ---
-        document.getElementById('searchInput').addEventListener('input', (e) => {
+        // --- 2. Умный поиск с переводом ---
+        const searchInput = document.getElementById('searchInput');
+        const searchStatus = document.getElementById('searchStatus');
+
+        // Оборачиваем нашу логику поиска в задержку (600 мс)
+        const handleSearch = debounce(async (e) => {
           let query = e.target.value.toLowerCase().trim();
-          
+
           if (!query) {
+            searchStatus.textContent = '';
             renderProducts(allProducts, '');
             return;
           }
 
-          let searchTerms = [query]; 
+          // Если в запросе русские буквы, пробуем перевести
+          const isRussian = /[а-яё]/i.test(query);
+          let searchTerms = [query];
 
-          for (const [ru, en] of Object.entries(DICTIONARY)) {
-            if (ru.includes(query)) {
-              // Разбиваем перевод на отдельные слова
-              const words = en.split(' '); 
-              searchTerms.push(...words);  
+          if (isRussian) {
+            searchStatus.textContent = '🔄 Переводим...';
+            try {
+              // Запрос к бесплатному API
+              const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=ru|en`);
+              const data = await res.json();
+              
+              if (data.responseData && data.responseData.translatedText) {
+                const translated = data.responseData.translatedText.toLowerCase();
+                // Добавляем перевод в поиск
+                searchTerms.push(translated);
+                // Разбиваем на отдельные слова тоже
+                searchTerms.push(...translated.split(' '));
+                
+                searchStatus.textContent = `Ищем: "${query}" + "${translated}"`;
+              }
+            } catch (err) {
+              console.error("Ошибка перевода:", err);
+              searchStatus.textContent = 'Ошибка перевода, ищем как есть...';
             }
+          } else {
+            searchStatus.textContent = '';
           }
 
+          // Фильтрация
           const filtered = allProducts.filter(p => {
             const titleLower = p.title.toLowerCase();
             return searchTerms.some(term => titleLower.includes(term));
           });
           
-          // Передаем также сам запрос (query), чтобы вставить его в ссылку
           renderProducts(filtered, query);
-        });
+
+        }, 600); // <-- Время задержки в миллисекундах
+
+        searchInput.addEventListener('input', handleSearch);
 
       } catch (error) {
         console.error(error);
@@ -263,10 +289,8 @@
       const grid = document.getElementById('productGrid');
       grid.innerHTML = '';
 
-      // --- ЕСЛИ НИЧЕГО НЕ НАЙДЕНО ---
       if (products.length === 0) {
-        // Создаем ссылку для поиска на AliExpress
-        const cleanQuery = currentQuery.replace(/\s+/g, "-"); // меняем пробелы на дефисы
+        const cleanQuery = currentQuery.replace(/\s+/g, "-");
         const aliLink = ALI_BASE + cleanQuery + ALI_TAIL;
 
         grid.innerHTML = `
@@ -311,13 +335,10 @@
     function parseCSV(text) {
       const lines = text.split('\n');
       const result = [];
-      
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        
         const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-        
         if (matches) {
           const cols = matches.map(val => val.replace(/^"|"$/g, '').trim());
           if (cols.length >= 10) {
